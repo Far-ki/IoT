@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34728.123
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IoTHubDevice.Console", "IoTHubDevice.Console\IoTHubDevice.Console.csproj", "{A7449533-0AB0-4637-B01E-B355769D926A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{386C7B59-9BBF-4122-BCBE-3D9DDE45EEAF} = {386C7B59-9BBF-4122-BCBE-3D9DDE45EEAF}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IoTHubDevice.Device", "IoTHubDevice.Device\IoTHubDevice.Device.csproj", "{386C7B59-9BBF-4122-BCBE-3D9DDE45EEAF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A7449533-0AB0-4637-B01E-B355769D926A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7449533-0AB0-4637-B01E-B355769D926A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7449533-0AB0-4637-B01E-B355769D926A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7449533-0AB0-4637-B01E-B355769D926A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{386C7B59-9BBF-4122-BCBE-3D9DDE45EEAF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{386C7B59-9BBF-4122-BCBE-3D9DDE45EEAF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{386C7B59-9BBF-4122-BCBE-3D9DDE45EEAF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{386C7B59-9BBF-4122-BCBE-3D9DDE45EEAF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B42CBBC2-AC68-4CC2-AD28-4DC5BE2DE000}
+	EndGlobalSection
+EndGlobal
