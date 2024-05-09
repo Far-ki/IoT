@@ -22,18 +22,8 @@ namespace IoT_Agent
             this.azure_client = azureClient;
             this.opc_client = opcClient;
         }
-        public async Task UpdateTwinAsync(object productionRate)
-        {
-            var twin = await azure_client.GetTwinAsync();
-            Console.WriteLine($"\t Initial twin value received: \n {JsonConvert.SerializeObject(twin, Formatting.Indented)}");
-            Console.WriteLine();
-
-            var reportedProperties = new TwinCollection();
-            reportedProperties["DateTimeLastAppLaunch"] = DateTime.Now;
-            reportedProperties["ProductionRate"] = productionRate;
-            await azure_client.UpdateReportedPropertiesAsync(reportedProperties);
-        }
-
+        
+        #region d2c
         public async Task D2C_Message()
         {
             opc_client.Connect();
@@ -79,6 +69,9 @@ namespace IoT_Agent
 
 
         }
+        #endregion
+
+        #region Device Twin
         private async Task OnDesirePropertyChange(TwinCollection desiredProperties, object userContext)
         {
             opc_client.Connect();
@@ -91,9 +84,54 @@ namespace IoT_Agent
 
             opc_client.WriteNode("ns=2;s=Device 1/ProductionRate", desiredProductionRate);
         }
+        public async Task UpdateTwinAsync(object productionRate)
+                {
+                    var twin = await azure_client.GetTwinAsync();
+                    Console.WriteLine($"\t Initial twin value received: \n {JsonConvert.SerializeObject(twin, Formatting.Indented)}");
+                    Console.WriteLine();
+
+                    var reportedProperties = new TwinCollection();
+                    reportedProperties["DateTimeLastAppLaunch"] = DateTime.Now;
+                    reportedProperties["ProductionRate"] = productionRate;
+                    await azure_client.UpdateReportedPropertiesAsync(reportedProperties);
+                }
+        #endregion
+
+
+        private async Task<MethodResponse> EmergencyStop(MethodRequest methodRequest, object userContext)
+        {
+            Console.WriteLine($"\t METHOD EXECUTED: {methodRequest.Name}");
+
+            opc_client.CallMethod($"ns=2;s=Device 1", $"ns=2;s=Device 1/EmergencyStop");
+
+            return new MethodResponse(0);
+        }
+        private async Task<MethodResponse> ResetErrorStatus(MethodRequest methodRequest, object userContext)
+        {
+            Console.WriteLine($"\t METHOD EXECUTED: {methodRequest.Name}");
+
+            opc_client.CallMethod($"ns=2;s=Device 1", $"ns=2;s=Device 1/ResetErrorStatus");
+
+            return new MethodResponse(0);
+        }
+
+
+            private async Task<MethodResponse> DefaultServiceHandler(MethodRequest methodRequest, object userContext)
+        {
+            Console.WriteLine($"\t DEFAULT METHOD EXECUTED: {methodRequest.Name}");
+            await Task.Delay(1000);
+            return new MethodResponse(0);
+
+        }
+
+
         public async Task InitializeHandler()
         {
             await azure_client.SetDesiredPropertyUpdateCallbackAsync(OnDesirePropertyChange, azure_client);
+            await azure_client.SetMethodDefaultHandlerAsync(DefaultServiceHandler, azure_client);
+
+            await azure_client.SetMethodHandlerAsync("EmergencyStop", EmergencyStop, azure_client);
+            await azure_client.SetMethodHandlerAsync("ResetErrorStatus", ResetErrorStatus, azure_client);
         }
 
     }

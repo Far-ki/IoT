@@ -15,4 +15,5 @@ var device = new Device_test(deviceClientAzure, deviceClientOpcUa);
 Console.WriteLine("Connection to Azure successfull!");
 await device.D2C_Message();
 await device.InitializeHandler();
+
 Console.ReadLine();
