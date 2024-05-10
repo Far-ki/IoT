@@ -16,4 +16,5 @@ Console.WriteLine("Connection to Azure successfull!");
 await device.D2C_Message();
 await device.InitializeHandler();
 
+await device.StartMonitoring();
 Console.ReadLine();
