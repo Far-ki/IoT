@@ -125,7 +125,7 @@ namespace IoT_Agent
         private async Task ChangeErrorStatus()
         {
             opc_client.Connect();
-
+             
 
             OpcReadNode ErrorStatusNode = new OpcReadNode("ns=2;s=Device 1/DeviceError");
             OpcValue currentErrorStatusValue = opc_client.ReadNode(ErrorStatusNode);
