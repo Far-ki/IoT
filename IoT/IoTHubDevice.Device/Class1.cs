@@ -16,25 +16,31 @@ namespace IoT_Agent
 
         private readonly DeviceClient azure_client;
         private readonly OpcClient opc_client;
+        private readonly string device_name;
 
-        public Device_test(DeviceClient azureClient, OpcClient opcClient)
+        public Device_test(DeviceClient azureClient, OpcClient opcClient, string device_name)
         {
             this.azure_client = azureClient;
             this.opc_client = opcClient;
+            this.device_name = device_name;
         }
         
         #region d2c
         public async Task D2C_Message()
         {
+
+
+
+
             opc_client.Connect();
 
-            OpcReadNode ProudctionStatus = new OpcReadNode("ns=2;s=Device 1/ProductionStatus");
-            OpcReadNode WorkOrderID = new OpcReadNode("ns=2;s=Device 1/WorkorderId");
-            OpcReadNode GoodCount = new OpcReadNode("ns=2;s=Device 1/GoodCount");
-            OpcReadNode BadCount = new OpcReadNode("ns=2;s=Device 1/BadCount");
-            OpcReadNode Temp = new OpcReadNode("ns=2;s=Device 1/Temperature");
-            OpcReadNode ProductionRate = new OpcReadNode("ns=2;s=Device 1/ProductionRate");
-            OpcReadNode DeviceError = new OpcReadNode("ns=2;s=Device 1/DeviceError");
+            OpcReadNode ProudctionStatus = new OpcReadNode($"ns=2;s={device_name}/ProductionStatus");
+            OpcReadNode WorkOrderID = new OpcReadNode($"ns=2;s={device_name}/WorkorderId");
+            OpcReadNode GoodCount = new OpcReadNode($"ns=2;s={device_name}/GoodCount");
+            OpcReadNode BadCount = new OpcReadNode($"ns=2;s={device_name}/BadCount");
+            OpcReadNode Temp = new OpcReadNode($"ns=2;s={device_name}/Temperature");
+            OpcReadNode ProductionRate = new OpcReadNode($"ns=2;s={device_name}/ProductionRate");
+            OpcReadNode DeviceError = new OpcReadNode($"ns=2;s={device_name}/DeviceError");
 
             OpcValue ReadPs = opc_client.ReadNode(ProudctionStatus);
             OpcValue ReadWo = opc_client.ReadNode(WorkOrderID);
@@ -49,8 +55,8 @@ namespace IoT_Agent
             {
                 readwo = "";
             }
-            UpdateTwinAsync(ReadPr.Value);
-            UpdateErrorStatus(ReadDe.Value);
+            await UpdateTwinAsync(ReadPr.Value);
+
             var data = new
             {
                 Production_status = ReadPs.Value,
@@ -58,6 +64,7 @@ namespace IoT_Agent
                 GoodCount = ReadGo.Value,
                 BadCount = ReadBc.Value,
                 ReadTe = ReadTe.Value,
+                Name = device_name
             };
 
 
@@ -85,11 +92,11 @@ namespace IoT_Agent
 
             int desiredProductionRate = desiredProperties["ProductionRate"];
 
-            opc_client.WriteNode("ns=2;s=Device 1/ProductionRate", desiredProductionRate);
+            opc_client.WriteNode($"ns=2;s={device_name}/ProductionRate", desiredProductionRate);
 
         }
         public async Task UpdateTwinAsync(object productionRate)
-                {
+        {
                     var twin = await azure_client.GetTwinAsync();
                     Console.WriteLine($"\t Initial twin value received: \n {JsonConvert.SerializeObject(twin, Formatting.Indented)}");
                     Console.WriteLine();
@@ -98,11 +105,11 @@ namespace IoT_Agent
                     reportedProperties["DateTimeLastAppLaunch"] = DateTime.Now;
                     reportedProperties["ProductionRate"] = productionRate;
                     await azure_client.UpdateReportedPropertiesAsync(reportedProperties);
-                }
+        }
 
         public async Task StartMonitoring()
         {
-
+            await Task.Delay(10);
             _ = Task.Run(async () =>
             {
                 while (true)
@@ -110,7 +117,7 @@ namespace IoT_Agent
                     try
                     {
                         await ChangeErrorStatus();
-
+                        await D2C_Message();
 
                         await Task.Delay(TimeSpan.FromSeconds(5));
                     }
@@ -127,7 +134,7 @@ namespace IoT_Agent
             opc_client.Connect();
              
 
-            OpcReadNode ErrorStatusNode = new OpcReadNode("ns=2;s=Device 1/DeviceError");
+            OpcReadNode ErrorStatusNode = new OpcReadNode($"ns=2;s={device_name}/DeviceError");
             OpcValue currentErrorStatusValue = opc_client.ReadNode(ErrorStatusNode);
             object currentErrorStatus = currentErrorStatusValue.Value;
 
@@ -135,36 +142,115 @@ namespace IoT_Agent
             object reportedErrorStatus = twin.Properties.Reported["DeviceError"];
 
 
-            reportedErrorStatus.ToString();
-            currentErrorStatus.ToString();
+            var twin2 = await azure_client.GetTwinAsync();
+            TwinCollection reportedProperties = twin2.Properties.Reported;
 
-            if (reportedErrorStatus== currentErrorStatus)
+
+            if (reportedErrorStatus.ToString()!= currentErrorStatus.ToString())
             {
                 Console.WriteLine("Zmiana!");
- 
-                var reportedProperties = new TwinCollection();
-                reportedProperties["DateTimeLastAppLaunch"] = DateTime.Now;
-                reportedProperties["DeviceError"] = currentErrorStatus;
-                await azure_client.UpdateReportedPropertiesAsync(reportedProperties);
 
-                ///I wysłać widomość d2c !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                var reportedProperties2 = new TwinCollection();
+                reportedProperties2["DateTimeLastAppLaunch"] = DateTime.Now;
+                reportedProperties2["DeviceError"] = currentErrorStatus;
+                await azure_client.UpdateReportedPropertiesAsync(reportedProperties2);
+
+
+                string mess="";
+
+                if (currentErrorStatus.ToString() == "0")
+                {
+                    mess = "None";
+
+                }
+                else if (currentErrorStatus.ToString() == "1")
+                {
+                    mess = "Emergency Stop";
+                }
+                else if (currentErrorStatus.ToString() == "2")
+                {
+                    mess = "Power Failure";
+                }
+                else if (currentErrorStatus.ToString() == "3")
+                {
+                    mess = "Emergency Stop,Power Failure";
+                }
+                else if (currentErrorStatus.ToString() == "4")
+                {
+                    mess = "Sensor Failure";
+                }
+                else if (currentErrorStatus.ToString() == "5")
+                {
+                    mess = "Sensor Failure,Emergency Stop";
+                }
+                else if (currentErrorStatus.ToString() == "6")
+                {
+                    mess = "Sensor Failure,Power Failure";
+                }
+                else if (currentErrorStatus.ToString() == "7")
+                {
+                    mess = "Emergency Stop,Sensor Failure,Power Failure";
+                }
+                else if (currentErrorStatus.ToString() == "8")
+                {
+                    mess = "Unknown";
+                }
+                else if (currentErrorStatus.ToString() == "9")
+                {
+                    mess = "Unknown,Emergency Stop";
+                }
+                else if (currentErrorStatus.ToString() == "10")
+                {
+                    mess = "Unknown,Power Failure";
+                }
+                else if (currentErrorStatus.ToString() == "11")
+                {
+                    mess = "Unknown,Power Failure,Emergency Stop";
+                }
+                else if (currentErrorStatus.ToString() == "12")
+                {
+                    mess = "Unknown,Sensor Failure";
+                }
+                else if (currentErrorStatus.ToString() == "13")
+                {
+                    mess = "Unknown,Sensor Failure,Emergency Stop";
+                }
+                else if (currentErrorStatus.ToString() == "14")
+                {
+                    mess = "Unknown,Sensor Failure,Power Failure";
+                }
+                else if (currentErrorStatus.ToString() == "15")
+                {
+                    mess = "Unknown,Sensor Failure,Power Failure,Emergency Stop";
+                }
+                var data = new
+                    {
+                         ErrorMes =mess,
+                    }; 
+                var dataString = JsonConvert.SerializeObject(data);
+                    Message eventMessage = new Message(Encoding.UTF8.GetBytes(dataString));
+                    eventMessage.ContentType = MediaTypeNames.Application.Json;
+                    eventMessage.ContentEncoding = "utf-8";
+                await azure_client.SendEventAsync(eventMessage);
+
+            }
+            else if(!reportedProperties.Contains("DeviceError"))
+            {
+                var twin3 = await azure_client.GetTwinAsync();
+                Console.WriteLine($"\t Initial twin value received: \n {JsonConvert.SerializeObject(twin3, Formatting.Indented)}");
+                Console.WriteLine();
+
+                var FirstReportedProperties = new TwinCollection();
+                FirstReportedProperties["DateTimeLastAppLaunch"] = DateTime.Now;
+                FirstReportedProperties["DeviceError"] = 0;
+                await azure_client.UpdateReportedPropertiesAsync(FirstReportedProperties);
+
             }
 
-            
+
         }
 
 
-        public async Task UpdateErrorStatus(object ErrorStatus)
-        {
-            var twin = await azure_client.GetTwinAsync();
-            Console.WriteLine($"\t Initial twin value received: \n {JsonConvert.SerializeObject(twin, Formatting.Indented)}");
-            Console.WriteLine();
-
-            var reportedProperties = new TwinCollection();
-            reportedProperties["DateTimeLastAppLaunch"] = DateTime.Now;
-            reportedProperties["DeviceError"] = ErrorStatus;
-            await azure_client.UpdateReportedPropertiesAsync(reportedProperties);
-        }
 
 
 
@@ -175,16 +261,16 @@ namespace IoT_Agent
         private async Task<MethodResponse> EmergencyStop(MethodRequest methodRequest, object userContext)
         {
             Console.WriteLine($"\t METHOD EXECUTED: {methodRequest.Name}");
-
-            opc_client.CallMethod($"ns=2;s=Device 1", $"ns=2;s=Device 1/EmergencyStop");
+            await Task.Delay(10);
+            opc_client.CallMethod($"ns=2;s={device_name}", $"ns=2;s={device_name}/EmergencyStop");
 
             return new MethodResponse(0);
         }
         private async Task<MethodResponse> ResetErrorStatus(MethodRequest methodRequest, object userContext)
         {
             Console.WriteLine($"\t METHOD EXECUTED: {methodRequest.Name}");
-
-            opc_client.CallMethod($"ns=2;s=Device 1", $"ns=2;s=Device 1/ResetErrorStatus");
+            await Task.Delay(10);
+            opc_client.CallMethod($"ns=2;s={device_name}", $"ns=2;s={device_name}/ResetErrorStatus");
 
             return new MethodResponse(0);
         }
