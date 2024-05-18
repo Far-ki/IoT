@@ -1,0 +1,40 @@
+KPI
+SELECT
+    Name AS Device, (( SUM(GoodCount) / (SUM(GoodCount) + SUM(BadCount))) * 100) AS Kpi
+INTO
+    [kpicont]
+FROM
+    [ULZajeciaIoT]
+    
+GROUP BY
+    Name,
+    TUMBLINGWINDOW(minute, 5);
+	
+	MIN MAX AVG temp
+	  SELECT
+      Name, AVG(ReadTe) AS temperatureAvg, MIN(ReadTe) AS temperatureMin, MAX(ReadTe) AS temperatureMax
+  INTO
+      [tempcont]
+  FROM
+      [ULZajeciaIoT]
+  WHERE
+      Name IS NOT NULL
+  GROUP BY
+      Name, HoppingWindow(Duration(minute, 5), Hop(minute, 1));
+	  
+	  
+	ERROR wiecej niz 3	  
+	SELECT
+		Name,
+		COUNT(ErrorMes) AS ErrorCount
+	INTO
+		[deviceerrorcont]
+	FROM
+		[ULZajeciaIoT]
+	WHERE
+		Name IS NOT NULL
+	GROUP BY
+		Name, SlidingWindow(minute, 1)
+	HAVING
+		COUNT(ErrorMes) > 3;
+		
