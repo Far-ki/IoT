@@ -9,7 +9,9 @@ FROM
 GROUP BY
     Name,
     TUMBLINGWINDOW(minute, 5);
-	
+
+
+
 	MIN MAX AVG temp
 	  SELECT
       Name, AVG(ReadTe) AS temperatureAvg, MIN(ReadTe) AS temperatureMin, MAX(ReadTe) AS temperatureMax
@@ -38,3 +40,4 @@ GROUP BY
 	HAVING
 		COUNT(ErrorMes) > 3;
 		
+Przykładowe wyniki zawarte w dokumetacji w formacie png
