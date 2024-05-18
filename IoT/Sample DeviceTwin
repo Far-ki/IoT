@@ -1,0 +1,57 @@
+{
+	"deviceId": "Device1",
+	"etag": "AAAAAAAAAAY=",
+	"deviceEtag": "OTcxNzc0MjUx",
+	"status": "enabled",
+	"statusUpdateTime": "0001-01-01T00:00:00Z",
+	"connectionState": "Disconnected",
+	"lastActivityTime": "2024-05-16T16:25:42.7640191Z",
+	"cloudToDeviceMessageCount": 0,
+	"authenticationType": "sas",
+	"x509Thumbprint": {
+		"primaryThumbprint": null,
+		"secondaryThumbprint": null
+	},
+	"modelId": "",
+	"version": 389,
+	"properties": {
+		"desired": {
+			"ProductionRate": 30,
+			"DeviceError": 0,
+			"$metadata": {
+				"$lastUpdated": "2024-05-16T10:35:39.5587979Z",
+				"$lastUpdatedVersion": 6,
+				"ProductionRate": {
+					"$lastUpdated": "2024-05-16T10:35:39.5587979Z",
+					"$lastUpdatedVersion": 6
+				},
+				"DeviceError": {
+					"$lastUpdated": "2024-05-16T10:35:39.5587979Z",
+					"$lastUpdatedVersion": 6
+				}
+			},
+			"$version": 6
+		},
+		"reported": {
+			"DateTimeLastAppLaunch": "2024-05-16T18:25:43.213879+02:00",
+			"ProductionRate": 40,
+			"DeviceError": 0,
+			"$metadata": {
+				"$lastUpdated": "2024-05-16T16:25:42.6084435Z",
+				"DateTimeLastAppLaunch": {
+					"$lastUpdated": "2024-05-16T16:25:42.6084435Z"
+				},
+				"ProductionRate": {
+					"$lastUpdated": "2024-05-16T16:25:42.6084435Z"
+				},
+				"DeviceError": {
+					"$lastUpdated": "2024-05-16T16:04:24.1839647Z"
+				}
+			},
+			"$version": 383
+		}
+	},
+	"capabilities": {
+		"iotEdge": false
+	}
+}
