@@ -28,10 +28,6 @@ namespace IoT_Agent
         #region d2c
         public async Task D2C_Message()
         {
-
-
-
-
             opc_client.Connect();
 
             OpcReadNode ProudctionStatus = new OpcReadNode($"ns=2;s={device_name}/ProductionStatus");
@@ -67,8 +63,6 @@ namespace IoT_Agent
                 Name = device_name
             };
 
-
-
             var dataString = JsonConvert.SerializeObject(data);
             Message eventMessage = new Message(Encoding.UTF8.GetBytes(dataString));
             eventMessage.ContentType = MediaTypeNames.Application.Json;
@@ -76,7 +70,6 @@ namespace IoT_Agent
 
 
             await azure_client.SendEventAsync(eventMessage);
-
 
         }
         #endregion
@@ -98,7 +91,7 @@ namespace IoT_Agent
         public async Task UpdateTwinAsync(object productionRate)
         {
                     var twin = await azure_client.GetTwinAsync();
-                    Console.WriteLine($"\t Initial twin value received: \n {JsonConvert.SerializeObject(twin, Formatting.Indented)}");
+                    Console.WriteLine($"\t Production update Twin: \n {JsonConvert.SerializeObject(twin, Formatting.Indented)}");
                     Console.WriteLine();
 
                     var reportedProperties = new TwinCollection();
@@ -116,7 +109,7 @@ namespace IoT_Agent
                 {
                     try
                     {
-                        await ChangeErrorStatus();
+                         await ChangeErrorStatus();
                         await D2C_Message();
 
                         await Task.Delay(TimeSpan.FromSeconds(5));
@@ -132,7 +125,6 @@ namespace IoT_Agent
         private async Task ChangeErrorStatus()
         {
             opc_client.Connect();
-             
 
             OpcReadNode ErrorStatusNode = new OpcReadNode($"ns=2;s={device_name}/DeviceError");
             OpcValue currentErrorStatusValue = opc_client.ReadNode(ErrorStatusNode);
@@ -141,12 +133,10 @@ namespace IoT_Agent
             var twin = await azure_client.GetTwinAsync();
             object reportedErrorStatus = twin.Properties.Reported["DeviceError"];
 
-
             var twin2 = await azure_client.GetTwinAsync();
             TwinCollection reportedProperties = twin2.Properties.Reported;
 
-
-            if (reportedErrorStatus.ToString()!= currentErrorStatus.ToString())
+            if (reportedErrorStatus.ToString() != currentErrorStatus.ToString())
             {
                 Console.WriteLine("Zmiana!");
 
@@ -156,100 +146,53 @@ namespace IoT_Agent
                 await azure_client.UpdateReportedPropertiesAsync(reportedProperties2);
 
 
-                string mess="";
-
-                if (currentErrorStatus.ToString() == "0")
-                {
-                    mess = "None";
-
-                }
-                else if (currentErrorStatus.ToString() == "1")
-                {
-                    mess = "Emergency Stop";
-                }
-                else if (currentErrorStatus.ToString() == "2")
-                {
-                    mess = "Power Failure";
-                }
-                else if (currentErrorStatus.ToString() == "3")
-                {
-                    mess = "Emergency Stop,Power Failure";
-                }
-                else if (currentErrorStatus.ToString() == "4")
-                {
-                    mess = "Sensor Failure";
-                }
-                else if (currentErrorStatus.ToString() == "5")
-                {
-                    mess = "Sensor Failure,Emergency Stop";
-                }
-                else if (currentErrorStatus.ToString() == "6")
-                {
-                    mess = "Sensor Failure,Power Failure";
-                }
-                else if (currentErrorStatus.ToString() == "7")
-                {
-                    mess = "Emergency Stop,Sensor Failure,Power Failure";
-                }
-                else if (currentErrorStatus.ToString() == "8")
-                {
-                    mess = "Unknown";
-                }
-                else if (currentErrorStatus.ToString() == "9")
-                {
-                    mess = "Unknown,Emergency Stop";
-                }
-                else if (currentErrorStatus.ToString() == "10")
-                {
-                    mess = "Unknown,Power Failure";
-                }
-                else if (currentErrorStatus.ToString() == "11")
-                {
-                    mess = "Unknown,Power Failure,Emergency Stop";
-                }
-                else if (currentErrorStatus.ToString() == "12")
-                {
-                    mess = "Unknown,Sensor Failure";
-                }
-                else if (currentErrorStatus.ToString() == "13")
-                {
-                    mess = "Unknown,Sensor Failure,Emergency Stop";
-                }
-                else if (currentErrorStatus.ToString() == "14")
-                {
-                    mess = "Unknown,Sensor Failure,Power Failure";
-                }
-                else if (currentErrorStatus.ToString() == "15")
-                {
-                    mess = "Unknown,Sensor Failure,Power Failure,Emergency Stop";
-                }
-                var data = new
-                    {
-                         ErrorMes =mess,
-                    }; 
-                var dataString = JsonConvert.SerializeObject(data);
-                    Message eventMessage = new Message(Encoding.UTF8.GetBytes(dataString));
-                    eventMessage.ContentType = MediaTypeNames.Application.Json;
-                    eventMessage.ContentEncoding = "utf-8";
-                await azure_client.SendEventAsync(eventMessage);
-
+                SendErrorMessages(currentErrorStatus.ToString());
             }
-            else if(!reportedProperties.Contains("DeviceError"))
+            else if (!reportedProperties.Contains("DeviceError"))
             {
                 var twin3 = await azure_client.GetTwinAsync();
-                Console.WriteLine($"\t Initial twin value received: \n {JsonConvert.SerializeObject(twin3, Formatting.Indented)}");
+                Console.WriteLine($"\t First twin device error: \n {JsonConvert.SerializeObject(twin3, Formatting.Indented)}");
                 Console.WriteLine();
 
                 var FirstReportedProperties = new TwinCollection();
                 FirstReportedProperties["DateTimeLastAppLaunch"] = DateTime.Now;
                 FirstReportedProperties["DeviceError"] = 0;
                 await azure_client.UpdateReportedPropertiesAsync(FirstReportedProperties);
-
             }
-
-
         }
 
+        private async void SendErrorMessages(string errorStatus)
+        {
+            string deviceName = device_name;
+            Dictionary<string, string> errorMessages = new Dictionary<string, string>
+            {
+                { "1", "Emergency Stop" },
+                { "2", "Power Failure" },
+                { "4", "Sensor Failure" },
+                { "8", "Unknown" }
+            };
+
+
+            foreach (var error in errorMessages)
+            {
+                int errorValue = int.Parse(error.Key);
+                if ((int.Parse(errorStatus) & errorValue) == errorValue)
+                {
+                    var data = new
+                    {
+                        ErrorMes = error.Value,
+                        Name = deviceName
+                    };
+                    var dataString = JsonConvert.SerializeObject(data);
+                    Message eventMessage = new Message(Encoding.UTF8.GetBytes(dataString))
+                    {
+                        ContentType = MediaTypeNames.Application.Json,
+                        ContentEncoding = "utf-8"
+                    };
+                    await azure_client.SendEventAsync(eventMessage);
+                }
+            }
+        }
 
 
 
